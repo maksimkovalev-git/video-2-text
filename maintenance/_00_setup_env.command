@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ENV_DIR="$PROJECT_DIR/whisper-env"
 REQUIREMENTS="$PROJECT_DIR/requirements.txt"
 

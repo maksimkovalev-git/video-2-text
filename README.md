@@ -1,47 +1,47 @@
 # Local Video to Text
 
-Локальная пакетная транскрибация через `faster-whisper` (`large-v3`, язык — английский).
+Local batch transcription powered by `faster-whisper` (`large-v3`, English by default).
 
-## Быстрый старт
+## Quick start
 
-1. На новом Mac запустите `_00_setup_env.command`.
-2. Положите аудио и видео в `01_inbox` — вложенные папки поддерживаются.
-3. Запустите `Run Transcription.command`.
+1. Run `maintenance/_00_setup_env.command`.
+2. Put audio and video files in `01_inbox`. Nested folders are supported.
+3. Run `_run_transcription.command`.
 
-TXT сохраняется рядом с исходником и с тем же именем:
+Each transcript is saved next to its source file with the same base name:
 
 ```text
 01_inbox/project/meeting.mp4
 01_inbox/project/meeting.txt
 ```
 
-Если такой TXT уже существует, исходный файл пропускается. Модель загружается один раз на всю пачку.
+If the matching TXT already exists, the source file is skipped. The model is loaded only once for the entire batch.
 
-## Служебные команды
+## Maintenance commands
 
-- `_90_wipe_data.command` — после ввода `WIPE` переносит содержимое `01_inbox` в Корзину.
-- `_99_destroy_env.command` — после ввода `DELETE` переносит `whisper-env` в Корзину.
+- `maintenance/_90_wipe_data.command` moves the contents of `01_inbox` to Trash after you enter `WIPE`.
+- `maintenance/_99_destroy_env.command` moves `whisper-env` to Trash after you enter `DELETE`.
 
-Код и внешний кэш модели эти команды не удаляют.
+Neither command removes the source code or the external model cache.
 
-## Дополнительный запуск
+## Command-line options
 
 ```bash
 source whisper-env/bin/activate
-python transcribe.py --help
+python src/transcribe.py --help
 ```
 
-Полезные варианты:
+Useful examples:
 
 ```bash
-# Строго офлайн, если модель уже скачана
-python transcribe.py --offline
+# Work strictly offline with an already downloaded model
+python src/transcribe.py --offline
 
-# Автоопределение языка
-python transcribe.py --language auto
+# Detect the spoken language automatically
+python src/transcribe.py --language auto
 
-# Результаты отдельно от видео; вложенная структура сохранится
-python transcribe.py --output-dir transcripts
+# Store transcripts separately while preserving the folder structure
+python src/transcribe.py --output-dir transcripts
 ```
 
-Видео и транскрипты никуда не загружаются. Интернет требуется для установки зависимостей и первого скачивания модели.
+Audio, video, and transcripts are processed locally and are not uploaded to third-party services. An internet connection is required to install dependencies and download the model for the first time.

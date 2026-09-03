@@ -21,7 +21,7 @@ def parse_args() -> argparse.Namespace:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("input", nargs="?", type=Path,
-        default=Path(__file__).resolve().parent / "01_inbox",
+        default=Path(__file__).resolve().parent.parent / "01_inbox",
         help="input file or inbox directory")
     parser.add_argument("--model", default="large-v3", help="Whisper model name or local model path")
     parser.add_argument(

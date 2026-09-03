@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 INBOX_DIR="$PROJECT_DIR/01_inbox"
 
 clear
