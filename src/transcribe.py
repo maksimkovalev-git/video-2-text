@@ -10,9 +10,21 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 
 SUPPORTED_FORMATS = ("txt", "srt", "vtt", "json")
 SUPPORTED_MEDIA = {".mp4", ".mov", ".mkv", ".avi", ".webm", ".m4v", ".mp3", ".wav", ".m4a", ".flac", ".ogg", ".aac", ".wma"}
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+PROFILES_DIR = PROJECT_DIR / "profiles"
+REQUIRED_PROFILE_KEYS = {
+    "model", "beam_size", "compute_type", "word_timestamps",
+    "hallucination_silence_threshold",
+}
+
+
+def available_profiles() -> tuple[str, ...]:
+    return tuple(sorted(path.stem for path in PROFILES_DIR.glob("*.yaml")))
 
 
 def parse_args() -> argparse.Namespace:
@@ -21,9 +33,13 @@ def parse_args() -> argparse.Namespace:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("input", nargs="?", type=Path,
-        default=Path(__file__).resolve().parent.parent / "01_inbox",
+        default=PROJECT_DIR / "01_inbox",
         help="input file or inbox directory")
-    parser.add_argument("--model", default="large-v3", help="Whisper model name or local model path")
+    parser.add_argument(
+        "--profile", choices=available_profiles(), default="normal",
+        help="speed/quality preset; individual options override it",
+    )
+    parser.add_argument("--model", help="Whisper model name or local model path")
     parser.add_argument(
         "--language",
         default="en",
@@ -38,13 +54,33 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--output-dir", type=Path, help="directory for output files")
     parser.add_argument("--device", default="auto", choices=("auto", "cpu", "cuda"))
-    parser.add_argument("--compute-type", default="auto", help="auto, int8, float16, ...")
-    parser.add_argument("--beam-size", type=int, default=5)
+    parser.add_argument("--compute-type", help="auto, int8, float16, ...")
+    parser.add_argument("--beam-size", type=int)
     parser.add_argument("--no-vad", action="store_true", help="disable silence filtering")
     parser.add_argument("--no-timestamps", action="store_true", help="omit timestamps in TXT")
     parser.add_argument("--offline", action="store_true", help="use only an already cached/local model")
     parser.add_argument("--overwrite", action="store_true", help="replace existing output files")
     return parser.parse_args()
+
+
+def apply_profile(args: argparse.Namespace) -> dict[str, Any]:
+    profile_path = PROFILES_DIR / f"{args.profile}.yaml"
+    try:
+        settings = yaml.safe_load(profile_path.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as exc:
+        raise ValueError(f"cannot read profile {profile_path}: {exc}") from exc
+    if not isinstance(settings, dict):
+        raise ValueError(f"profile must contain a YAML mapping: {profile_path}")
+    missing = REQUIRED_PROFILE_KEYS - settings.keys()
+    if missing:
+        raise ValueError(f"profile {args.profile} is missing: {', '.join(sorted(missing))}")
+    if args.model is not None:
+        settings["model"] = args.model
+    if args.compute_type is not None:
+        settings["compute_type"] = args.compute_type
+    if args.beam_size is not None:
+        settings["beam_size"] = args.beam_size
+    return settings
 
 
 def timestamp(seconds: float, separator: str = ",") -> str:
@@ -107,6 +143,11 @@ def collect_sources(input_path: Path) -> list[Path]:
 
 def main() -> int:
     args = parse_args()
+    try:
+        settings = apply_profile(args)
+    except ValueError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 2
     input_path = args.input.expanduser().resolve()
 
     if not input_path.exists():
@@ -115,7 +156,7 @@ def main() -> int:
     if not input_path.is_file() and not input_path.is_dir():
         print(f"Error: unsupported input: {input_path}", file=sys.stderr)
         return 2
-    if args.beam_size < 1:
+    if settings["beam_size"] < 1:
         print("Error: --beam-size must be at least 1", file=sys.stderr)
         return 2
 
@@ -152,11 +193,15 @@ def main() -> int:
         from faster_whisper import WhisperModel
 
         print(f"Files to transcribe: {len(jobs)}")
-        print(f"Loading model: {args.model}{' (offline)' if args.offline else ''}")
+        print(
+            f"Profile: {args.profile} | model: {settings['model']} | "
+            f"beam: {settings['beam_size']} | compute: {settings['compute_type']}"
+        )
+        print(f"Loading model{' (offline)' if args.offline else ''}...")
         model = WhisperModel(
-            args.model,
+            settings["model"],
             device=args.device,
-            compute_type=args.compute_type,
+            compute_type=settings["compute_type"],
             local_files_only=args.offline,
         )
         failures = 0
@@ -167,7 +212,9 @@ def main() -> int:
                     str(source),
                     language=None if args.language.lower() == "auto" else args.language,
                     vad_filter=not args.no_vad,
-                    beam_size=args.beam_size,
+                    beam_size=settings["beam_size"],
+                    word_timestamps=settings["word_timestamps"],
+                    hallucination_silence_threshold=settings["hallucination_silence_threshold"],
                 )
                 items: list[dict[str, Any]] = []
                 duration = float(info.duration or 0)
@@ -180,7 +227,8 @@ def main() -> int:
                     print(f"\rProgress: {progress:5.1f}%  {timestamp(segment.end, '.')} ", end="", flush=True)
                 print()
                 metadata = {
-                    "source": source.name, "model": args.model, "language": info.language,
+                    "source": source.name, "profile": args.profile,
+                    "model": settings["model"], "language": info.language,
                     "language_probability": info.language_probability, "duration_seconds": duration,
                 }
                 write_outputs(paths, items, metadata, args.no_timestamps)

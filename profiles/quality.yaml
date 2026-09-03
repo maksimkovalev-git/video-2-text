@@ -1,0 +1,5 @@
+model: large-v3
+beam_size: 8
+compute_type: float32
+word_timestamps: true
+hallucination_silence_threshold: 2.0

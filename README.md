@@ -6,7 +6,7 @@ Local batch transcription powered by `faster-whisper` (`large-v3`, English by de
 
 1. Run `maintenance/_00_setup_env.command`.
 2. Put audio and video files in `01_inbox`. Nested folders are supported.
-3. Run `_run_transcription.command`.
+3. Run `_run_transcription.command` (uses the `quality` profile).
 
 Each transcript is saved next to its source file with the same base name:
 
@@ -23,6 +23,21 @@ If the matching TXT already exists, the source file is skipped. The model is loa
 - `maintenance/_99_destroy_env.command` moves `whisper-env` to Trash after you enter `DELETE`.
 
 Neither command removes the source code or the external model cache.
+
+## Profiles
+
+| Profile | Model | Use case |
+|---|---|---|
+| `quality` | `large-v3` | Best accuracy, slowest; used by `_run_transcription.command` |
+| `normal` | `large-v3` | Balanced manual processing |
+| `fast` | `turbo` | Fastest, with some accuracy trade-off |
+
+Profile settings live in `profiles/*.yaml`. Add another YAML file to create a profile without changing the Python code. Models are downloaded on first use: `quality` and `normal` share `large-v3`, while `fast` uses a separate `turbo` model.
+
+```bash
+python src/transcribe.py --profile normal
+python src/transcribe.py --profile fast
+```
 
 ## Command-line options
 

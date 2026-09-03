@@ -17,7 +17,7 @@ if [ ! -x "$PYTHON" ]; then
 fi
 
 cd "$PROJECT_DIR" || exit 1
-"$PYTHON" src/transcribe.py
+"$PYTHON" src/transcribe.py --profile quality
 STATUS=$?
 
 echo

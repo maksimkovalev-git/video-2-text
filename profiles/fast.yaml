@@ -1,0 +1,5 @@
+model: turbo
+beam_size: 1
+compute_type: auto
+word_timestamps: false
+hallucination_silence_threshold: null
