@@ -1,0 +1,14 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+whisper-env/
+*.mp4
+*.mov
+*.mkv
+*.avi
+*.wav
+*.mp3
+01_inbox/*
+!01_inbox/.gitkeep
