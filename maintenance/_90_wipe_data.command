@@ -7,32 +7,32 @@ clear
 echo "Local Video to Text — Wipe Data"
 echo "==============================="
 echo
-echo "Содержимое 01_inbox будет перемещено в Корзину:"
+echo "The contents of 01_inbox will be moved to Trash:"
 echo "$INBOX_DIR"
 echo
-echo "Код, Python-окружение и кэш модели затронуты не будут."
+echo "The source code, Python environment, and model cache will not be affected."
 echo
-read -r -p "Введите WIPE для подтверждения: " CONFIRMATION
+read -r -p "Type WIPE to confirm: " CONFIRMATION
 
 if [ "$CONFIRMATION" != "WIPE" ]; then
     echo
-    echo "Отменено. Ничего не изменено."
-    read -r -p "Нажмите Enter, чтобы закрыть окно..."
+    echo "Cancelled. Nothing was changed."
+    read -r -p "Press Enter to close this window..."
     exit 0
 fi
 
 if [ ! -d "$INBOX_DIR" ]; then
     echo
-    echo "Папка 01_inbox отсутствует. Очищать нечего."
-    read -r -p "Нажмите Enter, чтобы закрыть окно..."
+    echo "The 01_inbox folder does not exist. Nothing to clean."
+    read -r -p "Press Enter to close this window..."
     exit 0
 fi
 
 ITEM_COUNT=$(find "$INBOX_DIR" -mindepth 1 -maxdepth 1 ! -name '.gitkeep' | wc -l | tr -d ' ')
 if [ "$ITEM_COUNT" -eq 0 ]; then
     echo
-    echo "Папка 01_inbox уже пуста."
-    read -r -p "Нажмите Enter, чтобы закрыть окно..."
+    echo "The 01_inbox folder is already empty."
+    read -r -p "Press Enter to close this window..."
     exit 0
 fi
 
@@ -41,8 +41,8 @@ TRASH_TARGET="$TRASH_DIR/video-2-text-data-$(date +%Y%m%d-%H%M%S)"
 
 if [ ! -d "$TRASH_DIR" ] || ! mkdir "$TRASH_TARGET"; then
     echo
-    echo "Не удалось подготовить папку в Корзине. Данные не изменены."
-    read -r -p "Нажмите Enter, чтобы закрыть окно..."
+    echo "Could not create a destination in Trash. No data was changed."
+    read -r -p "Press Enter to close this window..."
     exit 1
 fi
 
@@ -55,13 +55,13 @@ done < <(find "$INBOX_DIR" -mindepth 1 -maxdepth 1 ! -name '.gitkeep' -print0)
 
 echo
 if [ "$FAILED" -eq 0 ]; then
-    echo "Готово. Перемещено объектов: $ITEM_COUNT"
-    echo "Данные находятся в Корзине:"
+    echo "Done. Items moved: $ITEM_COUNT"
+    echo "The data is in Trash:"
     echo "$TRASH_TARGET"
 else
-    echo "Некоторые объекты переместить не удалось. Проверьте 01_inbox и Корзину."
+    echo "Some items could not be moved. Check 01_inbox and Trash."
 fi
 
 echo
-read -r -p "Нажмите Enter, чтобы закрыть окно..."
+read -r -p "Press Enter to close this window..."
 exit "$FAILED"

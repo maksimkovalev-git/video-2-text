@@ -10,54 +10,54 @@ echo "==========================="
 echo
 
 if ! command -v python3 >/dev/null 2>&1; then
-    echo "Ошибка: Python 3 не найден."
-    echo "Установите Python 3 и запустите Setup.command ещё раз."
+    echo "Error: Python 3 was not found."
+    echo "Install Python 3 and run _00_setup_env.command again."
     echo
-    read -r -p "Нажмите Enter, чтобы закрыть окно..."
+    read -r -p "Press Enter to close this window..."
     exit 1
 fi
 
 if [ ! -f "$REQUIREMENTS" ]; then
-    echo "Ошибка: не найден файл requirements.txt"
+    echo "Error: requirements.txt was not found."
     echo
-    read -r -p "Нажмите Enter, чтобы закрыть окно..."
+    read -r -p "Press Enter to close this window..."
     exit 1
 fi
 
 if [ -d "$ENV_DIR" ] && [ ! -f "$ENV_DIR/pyvenv.cfg" ]; then
-    echo "Ошибка: папка whisper-env существует, но не похожа на Python-окружение."
-    echo "Она оставлена без изменений."
+    echo "Error: whisper-env exists but does not look like a Python environment."
+    echo "It was left unchanged."
     echo
-    read -r -p "Нажмите Enter, чтобы закрыть окно..."
+    read -r -p "Press Enter to close this window..."
     exit 1
 fi
 
 if [ ! -d "$ENV_DIR" ]; then
-    echo "Создаю локальное Python-окружение..."
+    echo "Creating the local Python environment..."
     if ! python3 -m venv "$ENV_DIR"; then
-        echo "Ошибка при создании окружения."
-        read -r -p "Нажмите Enter, чтобы закрыть окно..."
+        echo "Failed to create the environment."
+        read -r -p "Press Enter to close this window..."
         exit 1
     fi
 else
-    echo "Окружение whisper-env уже существует — обновляю зависимости."
+    echo "The whisper-env environment already exists; updating dependencies."
 fi
 
-echo "Устанавливаю зависимости..."
+echo "Installing dependencies..."
 if ! "$ENV_DIR/bin/python" -m pip install --upgrade pip; then
-    echo "Ошибка при обновлении pip. Проверьте подключение к интернету."
-    read -r -p "Нажмите Enter, чтобы закрыть окно..."
+    echo "Failed to update pip. Check your internet connection."
+    read -r -p "Press Enter to close this window..."
     exit 1
 fi
 
 if ! "$ENV_DIR/bin/python" -m pip install -r "$REQUIREMENTS"; then
-    echo "Ошибка при установке зависимостей. Проверьте подключение к интернету."
-    read -r -p "Нажмите Enter, чтобы закрыть окно..."
+    echo "Failed to install dependencies. Check your internet connection."
+    read -r -p "Press Enter to close this window..."
     exit 1
 fi
 
 echo
-echo "Готово. Теперь можно запускать Run Transcription.command"
-echo "Модель large-v3 загрузится при первой транскрибации."
+echo "Setup complete. You can now run _run_transcription.command."
+echo "The selected model will be downloaded on first use."
 echo
-read -r -p "Нажмите Enter, чтобы закрыть окно..."
+read -r -p "Press Enter to close this window..."

@@ -9,10 +9,10 @@ echo "==================="
 echo
 
 if [ ! -x "$PYTHON" ]; then
-    echo "Ошибка: не найдено Python-окружение whisper-env."
-    echo "Ожидаемый путь: $PYTHON"
+    echo "Error: the whisper-env Python environment was not found."
+    echo "Expected path: $PYTHON"
     echo
-    read -r -p "Нажмите Enter, чтобы закрыть окно..."
+    read -r -p "Press Enter to close this window..."
     exit 1
 fi
 
@@ -22,10 +22,10 @@ STATUS=$?
 
 echo
 if [ "$STATUS" -eq 0 ]; then
-    echo "Обработка завершена."
+    echo "Processing completed."
 else
-    echo "Обработка завершилась с ошибкой (код $STATUS)."
+    echo "Processing failed (exit code $STATUS)."
 fi
 echo
-read -r -p "Нажмите Enter, чтобы закрыть окно..."
+read -r -p "Press Enter to close this window..."
 exit "$STATUS"
