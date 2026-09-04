@@ -12,3 +12,5 @@ whisper-env/
 *.mp3
 01_inbox/*
 !01_inbox/.gitkeep
+logs/*
+!logs/.gitkeep

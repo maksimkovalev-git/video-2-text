@@ -7,6 +7,8 @@ import argparse
 import json
 import os
 import sys
+import time
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +23,42 @@ REQUIRED_PROFILE_KEYS = {
     "model", "beam_size", "compute_type", "word_timestamps",
     "hallucination_silence_threshold",
 }
+
+
+class Tee:
+    """Write terminal output to a log file as well."""
+
+    def __init__(self, terminal: Any, log_file: Any) -> None:
+        self.terminal = terminal
+        self.log_file = log_file
+
+    def write(self, text: str) -> int:
+        written = self.terminal.write(text)
+        # Progress uses carriage returns in the terminal; keep log entries readable.
+        self.log_file.write(text.replace("\r", "\n"))
+        return written
+
+    def flush(self) -> None:
+        self.terminal.flush()
+        self.log_file.flush()
+
+    def isatty(self) -> bool:
+        return self.terminal.isatty()
+
+
+def setup_run_log() -> Path | None:
+    logs_dir = PROJECT_DIR / "logs"
+    try:
+        logs_dir.mkdir(parents=True, exist_ok=True)
+        name = datetime.now().astimezone().strftime("run_%Y%m%d-%H%M%S")
+        log_path = logs_dir / f"{name}-{os.getpid()}.log"
+        log_file = log_path.open("a", encoding="utf-8", buffering=1)
+    except OSError as exc:
+        print(f"Warning: could not create run log: {exc}", file=sys.stderr)
+        return None
+    sys.stdout = Tee(sys.stdout, log_file)
+    sys.stderr = Tee(sys.stderr, log_file)
+    return log_path
 
 
 def available_profiles() -> tuple[str, ...]:
@@ -91,6 +129,17 @@ def timestamp(seconds: float, separator: str = ",") -> str:
     return f"{hours:02d}:{minutes:02d}:{secs:02d}{separator}{milliseconds:03d}"
 
 
+def wall_clock() -> str:
+    return datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
+
+
+def elapsed_time(seconds: float) -> str:
+    total_seconds = max(0, round(seconds))
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, secs = divmod(remainder, 60)
+    return f"{hours:02d}:{minutes:02d}:{secs:02d}"
+
+
 def output_paths(source: Path, output_dir: Path, formats: list[str]) -> dict[str, Path]:
     return {fmt: output_dir / f"{source.stem}.{fmt}" for fmt in formats}
 
@@ -143,6 +192,9 @@ def collect_sources(input_path: Path) -> list[Path]:
 
 def main() -> int:
     args = parse_args()
+    log_path = setup_run_log()
+    if log_path:
+        print(f"Log: {log_path}")
     try:
         settings = apply_profile(args)
     except ValueError as exc:
@@ -189,6 +241,9 @@ def main() -> int:
         os.environ["HF_HUB_OFFLINE"] = "1"
         os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
+    batch_started = time.monotonic()
+    print(f"Batch started: {wall_clock()}")
+
     try:
         from faster_whisper import WhisperModel
 
@@ -206,8 +261,10 @@ def main() -> int:
         )
         failures = 0
         for number, (source, paths) in enumerate(jobs, start=1):
+            file_started = time.monotonic()
+            print(f"\n[{number}/{len(jobs)}] Started: {wall_clock()}")
             try:
-                print(f"\n[{number}/{len(jobs)}] Transcribing: {source.name}")
+                print(f"Transcribing: {source.name}")
                 segment_stream, info = model.transcribe(
                     str(source),
                     language=None if args.language.lower() == "auto" else args.language,
@@ -224,7 +281,14 @@ def main() -> int:
                         continue
                     items.append({"start": segment.start, "end": segment.end, "text": text})
                     progress = min(100.0, segment.end / duration * 100) if duration else 0
-                    print(f"\rProgress: {progress:5.1f}%  {timestamp(segment.end, '.')} ", end="", flush=True)
+                    elapsed = time.monotonic() - file_started
+                    eta = elapsed * (100.0 - progress) / progress if progress else 0
+                    print(
+                        f"\rProgress: {progress:5.1f}% | audio {timestamp(segment.end, '.')} "
+                        f"| elapsed {elapsed_time(elapsed)} | ETA {elapsed_time(eta)} ",
+                        end="",
+                        flush=True,
+                    )
                 print()
                 metadata = {
                     "source": source.name, "profile": args.profile,
@@ -237,16 +301,22 @@ def main() -> int:
             except Exception as exc:
                 failures += 1
                 print(f"Error: failed to transcribe {source.name}: {exc}", file=sys.stderr)
+            finally:
+                print(f"Finished: {wall_clock()} | took {elapsed_time(time.monotonic() - file_started)}")
     except KeyboardInterrupt:
-        print("\nCancelled. No output was written.", file=sys.stderr)
+        print("\nCancelled. The current file was not written; earlier outputs remain.", file=sys.stderr)
+        print(f"Batch stopped: {wall_clock()} | total {elapsed_time(time.monotonic() - batch_started)}")
         return 130
     except Exception as exc:
         print(f"Error: transcription failed: {exc}", file=sys.stderr)
         if args.offline:
             print("Hint: check that the selected model is already cached locally.", file=sys.stderr)
+        print(f"Batch stopped: {wall_clock()} | total {elapsed_time(time.monotonic() - batch_started)}")
         return 1
 
-    print(f"\nDone. Successful: {len(jobs) - failures}; failed: {failures}.")
+    print(f"\nBatch finished: {wall_clock()}")
+    print(f"Total time: {elapsed_time(time.monotonic() - batch_started)}")
+    print(f"Successful: {len(jobs) - failures}; failed: {failures}.")
     return 1 if failures else 0
 
 

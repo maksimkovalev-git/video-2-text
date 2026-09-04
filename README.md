@@ -16,6 +16,8 @@ Each transcript is saved next to its source file with the same base name:
 ```
 
 If the matching TXT already exists, the source file is skipped. The model is loaded only once for the entire batch.
+The terminal shows start/end times, elapsed time, estimated time remaining, and total batch duration.
+Every run is also recorded in a timestamped `logs/*.log` file. Logs stay local and are ignored by Git.
 
 ## Maintenance commands
 
