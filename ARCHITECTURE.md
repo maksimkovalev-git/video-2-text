@@ -35,6 +35,14 @@ flowchart LR
     CHUNKS --> RUN20
     NOTES -.->|"resume after interruption"| GENERATE
 
+    RUN30["_30_transfer_results.command"] --> OUT["10_output/<br/>portable result tree"]
+    RAW --> RUN30
+    READABLE --> RUN30
+    CHUNKS --> RUN30
+    NOTES --> RUN30
+    ARTICLE --> RUN30
+    SUMMARY --> RUN30
+
     subgraph S["Setup and maintenance"]
         SETUP1["maintenance/_00_setup_env.command"] --> WENV["whisper-env"]
         SETUP2["maintenance/_10_setup_llm.command"] --> LENV["llm-env"]
@@ -57,8 +65,8 @@ flowchart LR
     classDef storage fill:#f2f3f5,stroke:#747b86,color:#252a31;
 
     class U,INBOX input;
-    class RUN1,TR,RUN10,PROCESS,RUN20,GENERATE process;
-    class RAW,READABLE,CHUNKS,NOTES,ARTICLE,SUMMARY output;
+    class RUN1,TR,RUN10,PROCESS,RUN20,GENERATE,RUN30 process;
+    class RAW,READABLE,CHUNKS,NOTES,ARTICLE,SUMMARY,OUT output;
     class SETUP1,SETUP2,WIPE,DESTROY setup;
     class PROFILE,WHISPER,CONFIG,PROMPTS,MLX,WENV,LENV,LOGS,TRASH1,TRASH2 storage;
 ```
@@ -76,6 +84,7 @@ flowchart TB
             C1["_01_run_transcription.command"]
             C10["_10_process_transcripts.command"]
             C20["_20_generate_article.command"]
+            C30["_30_transfer_results.command<br/>shell + rsync"]
             M0["maintenance/_00_setup_env.command"]
             M10["maintenance/_10_setup_llm.command"]
         end
@@ -103,6 +112,7 @@ flowchart TB
             ARTICLE["*.article.md"]
             SUMMARY["*.summary.md"]
             LOGS["logs/*.log"]
+            OUTPUT["10_output/**<br/>copied result tree"]
         end
     end
 
@@ -141,6 +151,7 @@ flowchart TB
     USER --> C1
     USER --> C10
     USER --> C20
+    USER --> C30
     USER --> M0
     USER --> M10
 
@@ -173,6 +184,14 @@ flowchart TB
     PY20 --> ARTICLE
     PY20 --> SUMMARY
 
+    RAW --> C30
+    READABLE --> C30
+    CHUNKS --> C30
+    NOTES --> C30
+    ARTICLE --> C30
+    SUMMARY --> C30
+    C30 --> OUTPUT
+
     PY1 --> LOGS
     PY10 --> LOGS
     PY20 --> LOGS
@@ -183,11 +202,11 @@ flowchart TB
     classDef runtime fill:#e8f7ed,stroke:#318653,color:#123c22;
     classDef data fill:#f2f3f5,stroke:#747b86,color:#252a31;
 
-    class C1,C10,C20,M0,M10 command;
+    class C1,C10,C20,C30,M0,M10 command;
     class PY1,PY10,PY20 code;
     class WP,LC,LP,R1,R2 config;
     class WPY,FW,CT2,AV,WY,LPY,MLXLM,MLX,LY,HF runtime;
-    class MEDIA,RAW,READABLE,CHUNKS,NOTES,ARTICLE,SUMMARY,LOGS,WCACHE,LCACHE data;
+    class MEDIA,RAW,READABLE,CHUNKS,NOTES,ARTICLE,SUMMARY,LOGS,OUTPUT,WCACHE,LCACHE data;
 ```
 
 ## Data guarantees
@@ -195,4 +214,5 @@ flowchart TB
 - Raw media and `meeting.txt` remain unchanged during post-processing and article generation.
 - Existing transcription, processing, and article outputs are skipped by default.
 - `meeting.notes.jsonl` allows interrupted LLM generation to resume without repeating completed chunk work.
+- Result transfer copies files into `10_output` without moving or deleting their sources.
 - Media, transcripts, generated documents, environments, model caches, and logs remain local.

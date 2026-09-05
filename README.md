@@ -44,6 +44,12 @@ After post-processing, run `_20_generate_article.command`. It uses the local MLX
 
 Existing articles are skipped. If generation is interrupted, completed notes are reused on the next run. Raw transcripts and chunks are never modified. Prompts are stored in `llm/prompts/` and all processing stays local.
 
+## Transfer results
+
+Run `_30_transfer_results.command` to copy all available result artifacts from `01_inbox` to `10_output` while preserving the nested folder structure. It copies raw TXT, readable Markdown, chunks, notes, articles, and summaries—but not media or logs.
+
+Missing artifact types are expected and are not treated as errors. Existing destination files are updated; source files are never moved or deleted. The contents of `10_output` stay local and are ignored by Git.
+
 ## Maintenance commands
 
 - `maintenance/_90_wipe_data.command` moves the contents of `01_inbox` to Trash after you enter `WIPE`.

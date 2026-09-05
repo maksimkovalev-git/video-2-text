@@ -13,5 +13,7 @@ llm-env/
 *.mp3
 01_inbox/*
 !01_inbox/.gitkeep
+10_output/*
+!10_output/.gitkeep
 logs/*
 !logs/.gitkeep
