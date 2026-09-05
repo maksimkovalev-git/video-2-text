@@ -28,6 +28,22 @@ Run `_10_process_transcripts.command` after transcription. It recursively conver
 
 Raw TXT files are never modified. Existing processed outputs are skipped. The process is local, deterministic, and does not use an LLM.
 
+## Local LLM
+
+Run `maintenance/_10_setup_llm.command` to create a separate `llm-env`, install Apple MLX, download the configured model, and verify that it loads. The setup is console-based and requires no GUI, account, or background server.
+
+The default model is `mlx-community/Qwen3-14B-4bit` (approximately 8.3 GB). Its settings are stored in `llm/config.yaml`. Models are downloaded once and then loaded from the local Hugging Face cache.
+
+## Generate articles
+
+After post-processing, run `_20_generate_article.command`. It uses the local MLX model to recursively convert every `*.chunks.jsonl` into:
+
+- `meeting.notes.jsonl` — resumable source notes with timestamps;
+- `meeting.article.md` — a coherent article with source time ranges;
+- `meeting.summary.md` — a concise overview.
+
+Existing articles are skipped. If generation is interrupted, completed notes are reused on the next run. Raw transcripts and chunks are never modified. Prompts are stored in `llm/prompts/` and all processing stays local.
+
 ## Maintenance commands
 
 - `maintenance/_90_wipe_data.command` moves the contents of `01_inbox` to Trash after you enter `WIPE`.

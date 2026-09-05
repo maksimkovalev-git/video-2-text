@@ -4,6 +4,7 @@ __pycache__/
 .venv/
 venv/
 whisper-env/
+llm-env/
 *.mp4
 *.mov
 *.mkv

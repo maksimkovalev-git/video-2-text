@@ -1,0 +1,9 @@
+backend: mlx
+model: mlx-community/Qwen3-14B-4bit
+temperature: 0.2
+max_tokens: 4096
+chunk_notes_tokens: 768
+consolidation_tokens: 2048
+summary_tokens: 1024
+max_input_chars: 24000
+top_p: 0.9
