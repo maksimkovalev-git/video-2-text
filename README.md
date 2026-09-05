@@ -6,7 +6,7 @@ Local batch transcription powered by `faster-whisper` (`large-v3`, English by de
 
 1. Run `maintenance/_00_setup_env.command`.
 2. Put audio and video files in `01_inbox`. Nested folders are supported.
-3. Run `_run_transcription.command` (uses the `normal` profile).
+3. Run `_01_run_transcription.command` (uses the `normal` profile).
 
 Each transcript is saved next to its source file with the same base name:
 
@@ -18,6 +18,15 @@ Each transcript is saved next to its source file with the same base name:
 If the matching TXT already exists, the source file is skipped. The model is loaded only once for the entire batch.
 The terminal shows start/end times, elapsed time, estimated time remaining, and total batch duration.
 Every run is also recorded in a timestamped `logs/*.log` file. Logs stay local and are ignored by Git.
+
+## Process transcripts
+
+Run `_10_process_transcripts.command` after transcription. It recursively converts each raw timecoded TXT into:
+
+- `meeting.readable.md` — readable timecoded paragraphs;
+- `meeting.chunks.jsonl` — overlapping chunks with source metadata for a knowledge base.
+
+Raw TXT files are never modified. Existing processed outputs are skipped. The process is local, deterministic, and does not use an LLM.
 
 ## Maintenance commands
 
@@ -31,7 +40,7 @@ Neither command removes the source code or the external model cache.
 | Profile | Model | Use case |
 |---|---|---|
 | `quality` | `large-v3` | Best accuracy, slowest |
-| `normal` | `large-v3` | Balanced processing; used by `_run_transcription.command` |
+| `normal` | `large-v3` | Balanced processing; used by `_01_run_transcription.command` |
 | `fast` | `turbo` | Fastest, with some accuracy trade-off |
 
 Profile settings live in `profiles/*.yaml`. Add another YAML file to create a profile without changing the Python code. Models are downloaded on first use: `quality` and `normal` share `large-v3`, while `fast` uses a separate `turbo` model.

@@ -57,7 +57,7 @@ if ! "$ENV_DIR/bin/python" -m pip install -r "$REQUIREMENTS"; then
 fi
 
 echo
-echo "Setup complete. You can now run _run_transcription.command."
+echo "Setup complete. You can now run _01_run_transcription.command."
 echo "The selected model will be downloaded on first use."
 echo
 read -r -p "Press Enter to close this window..."
